@@ -1,10 +1,8 @@
-﻿using System;
-using System.Threading;
-
-namespace ConsoleApp2
+﻿namespace ConsoleApp2
 {
     class Program
     {
+        private static Semaphore _semaphore = new Semaphore(1,1);
 
         private static object _lock = new object();
 
@@ -38,32 +36,30 @@ namespace ConsoleApp2
         // A method that deposits money to the account
         private static void deposit(int amount)
         {
-            lock (_lock)
-            {
-                _balance += amount;
-                Console.WriteLine(Environment.CurrentManagedThreadId+ " - Deposited {0} to the account. Balance: {1}", amount, _balance);
-                Monitor.PulseAll(_lock);
-            }
-            
+
+            _semaphore.WaitOne();
+            _balance += amount;
+            _semaphore.Release();
+            Console.WriteLine(Environment.CurrentManagedThreadId+ " - Deposited {0} to the account. Balance: {1}", amount, _balance);
+
         }
 
         // A method that withdraws money from the account
         private static void withdraw(int amount)
         {
-            lock (_lock)
+            _semaphore.WaitOne();
+            if (_balance >= amount)
             {
-                if (_balance >= amount)
-                {
-                    _balance -= amount;
-                    
-                    Console.WriteLine(Environment.CurrentManagedThreadId+ " - Withdrew {0} from the account. Balance: {1}", amount, _balance);
-                }
-                else
-                {
-                    Console.WriteLine(Environment.CurrentManagedThreadId+ " - Cannot withdraw {0} from the account. Balance: {1}", amount, _balance);
-                    Monitor.Wait(_lock);
-                    withdraw(amount);
-                }
+                _balance -= amount;
+                Console.WriteLine(Environment.CurrentManagedThreadId+ " - Withdrew {0} from the account. Balance: {1}", amount, _balance);
+                _semaphore.Release();
+            }
+            else
+            {
+                _semaphore.Release();
+                Console.WriteLine(Environment.CurrentManagedThreadId+ " - Cannot withdraw {0} from the account. Balance: {1}", amount, _balance);
+                Thread.Sleep(1000);
+                withdraw(amount);
             }
         }
     }
