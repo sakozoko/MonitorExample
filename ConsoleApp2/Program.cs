@@ -34,24 +34,15 @@ namespace ConsoleApp2
                 withdraw(amount);
             }
         }
-
-        // A method that deposits money to the account
         private static void deposit(int amount)
         {
-            lock (_lock)
-            {
-                _balance += amount;
-                Console.WriteLine(Environment.CurrentManagedThreadId+ " - Deposited {0} to the account. Balance: {1}", amount, _balance);
-                Monitor.PulseAll(_lock);
-            }
-            
+            Console.WriteLine(Environment.CurrentManagedThreadId + " - Depositing {0} to the account. Balance: {1}", amount, _balance);
+            _balance += amount;
+            Console.WriteLine(Environment.CurrentManagedThreadId+ " - Deposited {0} to the account. Balance: {1}", amount, _balance);
         }
-
-        // A method that withdraws money from the account
         private static void withdraw(int amount)
         {
-            lock (_lock)
-            {
+
                 if (_balance >= amount)
                 {
                     _balance -= amount;
@@ -61,10 +52,9 @@ namespace ConsoleApp2
                 else
                 {
                     Console.WriteLine(Environment.CurrentManagedThreadId+ " - Cannot withdraw {0} from the account. Balance: {1}", amount, _balance);
-                    Monitor.Wait(_lock);
+                    Thread.Sleep(1000);
                     withdraw(amount);
                 }
-            }
         }
     }
 }
